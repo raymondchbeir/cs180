@@ -57,18 +57,18 @@
 <section class="project-section alt" id="single">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 1</p><h2>Single-Scale Alignment</h2></div><span class="section-number">01</span></div>
-    <p class="section-copy">For the low-resolution JPEGs, I exhaustively search translations in a ±15 pixel window. For every candidate displacement, I shift the entire channel and score only the interior region so the plate borders and wraparound from <code>np.roll</code> do not dominate the match.</p>
+    <p class="section-copy">For the low resolution JPEGs, I tried translations in ±15 pixel windows for a total of 900 translations and for each translation we then cropped the edges by 15 pixels which is the max shift and scored what was left using L2 and NCC methods and compared it to the cropped blue reference.</p>
 
     <div class="method-grid">
       <article class="method-card">
-        <p class="mini-label">L2 distance</p>
+        <p>L2 distance</p>
         <div class="formula">Σ (B − G<sub>shifted</sub>)²</div>
-        <p>L2 compares raw pixel intensities. The best alignment is the displacement with the <strong>smallest</strong> squared difference.</p>
+        <p>L2 compares raw pixel intensities. The best alignment is the displacement with the smallest squared difference.</p>
       </article>
       <article class="method-card">
-        <p class="mini-label">Normalized cross-correlation</p>
+        <p>Normalized cross-correlation</p>
         <div class="formula">Σ(B−B̄)(G−Ḡ) / √(Σ(B−B̄)² Σ(G−Ḡ)²)</div>
-        <p>NCC removes each channel's mean intensity before comparison. The best alignment is the displacement with the <strong>largest</strong> correlation.</p>
+        <p>NCC removes each channel's mean intensity before comparison. The best alignment is the displacement with the largest correlation.</p>
       </article>
     </div>
 
@@ -80,7 +80,7 @@
           <figure><img src="images/cathedral_l2.jpg" alt="Cathedral aligned with L2"><figcaption>L2</figcaption></figure>
           <figure><img src="images/cathedral_ncc.jpg" alt="Cathedral aligned with NCC"><figcaption>NCC</figcaption></figure>
         </div>
-        <p class="offset">Offsets will be added from the final notebook output.</p>
+        <p class="offset">L2 offsets (dy, dx): G: (5, 2) · R: (12, 3)</p>
       </article>
       <article class="result-pair">
         <h4>Monastery</h4>
@@ -88,7 +88,7 @@
           <figure><img src="images/monastery_l2.jpg" alt="Monastery aligned with L2"><figcaption>L2</figcaption></figure>
           <figure><img src="images/monastery_ncc.jpg" alt="Monastery aligned with NCC"><figcaption>NCC</figcaption></figure>
         </div>
-        <p class="offset">Offsets will be added from the final notebook output.</p>
+        <p class="offset">L2 offsets (dy, dx): G: (-3, 2) · R: (3, 2)</p>
       </article>
       <article class="result-pair">
         <h4>Tobolsk</h4>
@@ -96,7 +96,7 @@
           <figure><img src="images/tobolsk_l2.jpg" alt="Tobolsk aligned with L2"><figcaption>L2</figcaption></figure>
           <figure><img src="images/tobolsk_ncc.jpg" alt="Tobolsk aligned with NCC"><figcaption>NCC</figcaption></figure>
         </div>
-        <p class="offset">Offsets will be added from the final notebook output.</p>
+        <p class="offset">L2 offsets (dy, dx): G: (3, 3) · R: (6, 3)</p>
       </article>
     </div>
   </div>
@@ -105,7 +105,7 @@
 <section class="project-section dark" id="pyramid">
   <div class="shell">
     <div class="section-heading light-heading"><div><p class="section-kicker gold">Part 2</p><h2>Coarse-to-Fine Image Pyramid</h2></div><span class="section-number">02</span></div>
-    <p class="section-copy light-copy">The TIFF scans are much larger, so a large exhaustive search at full resolution is expensive. I recursively downsample each channel by a factor of 2 until the image is small enough for a ±15 pixel search. I then return up the pyramid, doubling the estimated displacement at each level and refining it locally within a ±5 pixel window.</p>
+    <p class="section-copy light-copy">The TIFF scans are much larger so doing the same search at full resolution would take a lot longer. I use anti aliasing to blur the image a little before downsizing and then scale each channel down by 2 until it is small enough to search. After finding the shift on the small image I send that information back up, double the shift for the next resolution and then only search around that local region instead of searching everything again.</p>
 
     <div class="pyramid-visual">
       <div class="pyr-level l4"><span>1/8 scale</span><strong>coarse search</strong></div>
@@ -116,7 +116,7 @@
 
     <div class="explanation-card dark-card">
       <div class="explanation-label">Why this is faster</div>
-      <p>A displacement that may be 100 pixels at full resolution becomes only about 12–13 pixels at 1/8 resolution. The coarse level finds the neighborhood of the correct solution cheaply, and the higher-resolution levels only need small local searches.</p>
+      <p>At 1/8 resolution the shift we are searching for is only around an eighth of what it would be on the full image so we can find the general area much faster and then use that result when we go back up. The first search is a ±15 window which is about 900 translations and then each level going back up only searches a ±5 local window which is about 100 more translations, so for the pyramid shown here it is around 1200 searches per channel instead of doing one huge search on the full resolution image.</p>
     </div>
   </div>
 </section>
@@ -124,20 +124,20 @@
 <section class="project-section" id="results">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Provided data</p><h2>Multi-Scale Results</h2></div><span class="section-number">03</span></div>
-    <p class="section-copy">The high-resolution outputs below use pyramid NCC. The three low-resolution JPEGs above are already small enough to terminate at the base level of the pyramid and use the same NCC search directly.</p>
+    <p class="section-copy">The high resolution outputs below use pyramid NCC. The offsets are shown as (dy, dx).</p>
 
     <div class="result-grid">
-      <figure class="result-card"><img src="images/church_pyramid_ncc.jpg" alt="Church"><figcaption><strong>Church</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card failure-card"><img src="images/emir_pyramid_ncc.jpg" alt="Emir"><figcaption><strong>Emir</strong><span class="offset">G: — · R: — · failure case</span></figcaption></figure>
-      <figure class="result-card"><img src="images/harvesters_pyramid_ncc.jpg" alt="Harvesters"><figcaption><strong>Harvesters</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/icon_pyramid_ncc.jpg" alt="Icon"><figcaption><strong>Icon</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/ilemselga_pyramid_ncc.jpg" alt="Ilemselga"><figcaption><strong>Ilemselga</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/melons_pyramid_ncc.jpg" alt="Melons"><figcaption><strong>Melons</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/religious_painting_pyramid_ncc.jpg" alt="Religious painting"><figcaption><strong>Religious Painting</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/self_portrait_pyramid_ncc.jpg" alt="Self portrait"><figcaption><strong>Self Portrait</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/siren_pyramid_ncc.jpg" alt="Siren"><figcaption><strong>Siren</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/three_generations_pyramid_ncc.jpg" alt="Three generations"><figcaption><strong>Three Generations</strong><span class="offset">G: — · R: —</span></figcaption></figure>
-      <figure class="result-card"><img src="images/wharf_pyramid_ncc.jpg" alt="Wharf"><figcaption><strong>Wharf</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/church_pyramid_ncc.jpg" alt="Church"><figcaption><strong>Church</strong><span class="offset">G: (23, -7) · R: (52, -11)</span></figcaption></figure>
+      <figure class="result-card failure-card"><img src="images/emir_pyramid_ncc.jpg" alt="Emir"><figcaption><strong>Emir</strong><span class="offset">G: (43, 17) · R: (117, -203) · failure case</span></figcaption></figure>
+      <figure class="result-card"><img src="images/harvesters_pyramid_ncc.jpg" alt="Harvesters"><figcaption><strong>Harvesters</strong><span class="offset">G: (59, 11) · R: (124, 9)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/icon_pyramid_ncc.jpg" alt="Icon"><figcaption><strong>Icon</strong><span class="offset">G: (40, 16) · R: (89, 23)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/ilemselga_pyramid_ncc.jpg" alt="Ilemselga"><figcaption><strong>Ilemselga</strong><span class="offset">G: (39, -4) · R: (113, -3)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/melons_pyramid_ncc.jpg" alt="Melons"><figcaption><strong>Melons</strong><span class="offset">G: (83, 4) · R: (177, 8)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/religous_painting_pyramid_ncc.jpg" alt="Religious painting"><figcaption><strong>Religious Painting</strong><span class="offset">G: (25, 3) · R: (69, 7)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/self_portrait_pyramid_ncc.jpg" alt="Self portrait"><figcaption><strong>Self Portrait</strong><span class="offset">G: (77, 21) · R: (174, 29)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/siren_pyramid_ncc.jpg" alt="Siren"><figcaption><strong>Siren</strong><span class="offset">G: (48, -7) · R: (98, -21)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/three_generations_pyramid_ncc.jpg" alt="Three generations"><figcaption><strong>Three Generations</strong><span class="offset">G: (52, 5) · R: (110, 7)</span></figcaption></figure>
+      <figure class="result-card"><img src="images/wharf_pyramid_ncc.jpg" alt="Wharf"><figcaption><strong>Wharf</strong><span class="offset">G: (15, -7) · R: (83, -17)</span></figcaption></figure>
     </div>
   </div>
 </section>
@@ -146,11 +146,11 @@
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Failure analysis</p><h2>Emir of Bukhara</h2></div><span class="section-number">04</span></div>
     <div class="failure-layout">
-      <figure class="failure-image"><img src="images/emir_pyramid_ncc.jpg" alt="Misaligned Emir result"><figcaption>Raw-pixel NCC result</figcaption></figure>
+      <figure class="failure-image"><img src="images/emir_pyramid_ncc.jpg" alt="Misaligned Emir result"><figcaption>Raw pixel NCC result</figcaption></figure>
       <div class="failure-copy">
-        <h3>Why the baseline fails here</h3>
-        <p>The Emir image is my one retained failure case. The three filtered exposures have substantially different intensity distributions, especially across the subject's clothing. Raw-pixel NCC assumes that corresponding image structure produces correlated intensity patterns, and that assumption is weaker here than in the other provided images.</p>
-        <p>An edge- or gradient-based feature could reduce sensitivity to these cross-channel intensity differences, but I kept the required raw-pixel NCC baseline and documented the failure rather than adding an image-specific correction.</p>
+        <h3>Why it failed</h3>
+        <p>Emir is the one image that did not work with my NCC alignment because the brightness between the red green and blue exposures is just too different especially on the clothes so even when the image gets closer to the right spot the pixels are not matching the same way they do on the other pictures and NCC ends up choosing the wrong shift.</p>
+        <p>I could probably fix this using edges or gradients instead of the actual pixel values because the edges should stay more similar between the channels but since the project allows one image to fail I just kept the normal NCC method I used for everything else and left this one as the failure.</p>
       </div>
     </div>
   </div>
