@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Raymond Chbeir — CS180 Project 1: Images of the Russian Empire">
+  <title>CS180 Project 1 — Raymond Chbeir</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hero" id="top">
+  <nav class="nav shell">
+    <a class="brand" href="#top"><span class="brand-mark">180</span><span>CS180 · Project 1</span></a>
+    <div class="nav-links">
+      <a href="#single">Single-scale</a>
+      <a href="#pyramid">Pyramid</a>
+      <a href="#results">Results</a>
+      <a href="#failure">Failure</a>
+      <a href="#extras">Extras</a>
+      <a href="../">Project 0</a>
+    </div>
+  </nav>
+  <div class="hero-content shell">
+    <p class="eyebrow">UC Berkeley · Fall 2026</p>
+    <h1>Images of the<br>Russian Empire</h1>
+    <p class="lede">Colorizing the Prokudin-Gorskii photo collection by aligning three separately captured blue, green, and red exposures.</p>
+    <div class="hero-meta"><span>Raymond Chbeir</span><span class="dot">•</span><span>CS180: Intro to Computer Vision and Computational Photography</span></div>
+    <a class="scroll-btn" href="#overview">View project ↓</a>
+  </div>
+  <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
+</header>
+
+<main>
+<section class="intro shell" id="overview">
+  <p class="section-kicker">Overview</p>
+  <div class="intro-grid">
+    <h2>Three monochrome exposures become one color photograph.</h2>
+    <div>
+      <p>The digitized glass plates contain three grayscale exposures stacked vertically in B, G, R order. Each exposure records the same scene through a different color filter.</p>
+      <p>Because the exposures are slightly displaced, directly stacking them produces colored ghosting. I keep the blue channel fixed, estimate the translation of the green and red channels relative to blue, shift them, and then stack the aligned channels into an RGB image.</p>
+    </div>
+  </div>
+  <div class="pipeline">
+    <div><strong>1</strong><span>Split plate into B, G, R</span></div>
+    <div class="arrow">→</div>
+    <div><strong>2</strong><span>Estimate G→B and R→B shifts</span></div>
+    <div class="arrow">→</div>
+    <div><strong>3</strong><span>Translate channels</span></div>
+    <div class="arrow">→</div>
+    <div><strong>4</strong><span>Stack aligned R, G, B</span></div>
+  </div>
+</section>
+
+<section class="project-section alt" id="single">
+  <div class="shell">
+    <div class="section-heading"><div><p class="section-kicker">Part 1</p><h2>Single-Scale Alignment</h2></div><span class="section-number">01</span></div>
+    <p class="section-copy">For the low-resolution JPEGs, I exhaustively search translations in a ±15 pixel window. For every candidate displacement, I shift the entire channel and score only the interior region so the plate borders and wraparound from <code>np.roll</code> do not dominate the match.</p>
+
+    <div class="method-grid">
+      <article class="method-card">
+        <p class="mini-label">L2 distance</p>
+        <div class="formula">Σ (B − G<sub>shifted</sub>)²</div>
+        <p>L2 compares raw pixel intensities. The best alignment is the displacement with the <strong>smallest</strong> squared difference.</p>
+      </article>
+      <article class="method-card">
+        <p class="mini-label">Normalized cross-correlation</p>
+        <div class="formula">Σ(B−B̄)(G−Ḡ) / √(Σ(B−B̄)² Σ(G−Ḡ)²)</div>
+        <p>NCC removes each channel's mean intensity before comparison. The best alignment is the displacement with the <strong>largest</strong> correlation.</p>
+      </article>
+    </div>
+
+    <h3 class="subhead">Low-resolution results</h3>
+    <div class="comparison-results">
+      <article class="result-pair">
+        <h4>Cathedral</h4>
+        <div class="pair-grid">
+          <figure><img src="images/cathedral_l2.jpg" alt="Cathedral aligned with L2"><figcaption>L2</figcaption></figure>
+          <figure><img src="images/cathedral_ncc.jpg" alt="Cathedral aligned with NCC"><figcaption>NCC</figcaption></figure>
+        </div>
+        <p class="offset">Offsets will be added from the final notebook output.</p>
+      </article>
+      <article class="result-pair">
+        <h4>Monastery</h4>
+        <div class="pair-grid">
+          <figure><img src="images/monastery_l2.jpg" alt="Monastery aligned with L2"><figcaption>L2</figcaption></figure>
+          <figure><img src="images/monastery_ncc.jpg" alt="Monastery aligned with NCC"><figcaption>NCC</figcaption></figure>
+        </div>
+        <p class="offset">Offsets will be added from the final notebook output.</p>
+      </article>
+      <article class="result-pair">
+        <h4>Tobolsk</h4>
+        <div class="pair-grid">
+          <figure><img src="images/tobolsk_l2.jpg" alt="Tobolsk aligned with L2"><figcaption>L2</figcaption></figure>
+          <figure><img src="images/tobolsk_ncc.jpg" alt="Tobolsk aligned with NCC"><figcaption>NCC</figcaption></figure>
+        </div>
+        <p class="offset">Offsets will be added from the final notebook output.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="project-section dark" id="pyramid">
+  <div class="shell">
+    <div class="section-heading light-heading"><div><p class="section-kicker gold">Part 2</p><h2>Coarse-to-Fine Image Pyramid</h2></div><span class="section-number">02</span></div>
+    <p class="section-copy light-copy">The TIFF scans are much larger, so a large exhaustive search at full resolution is expensive. I recursively downsample each channel by a factor of 2 until the image is small enough for a ±15 pixel search. I then return up the pyramid, doubling the estimated displacement at each level and refining it locally within a ±5 pixel window.</p>
+
+    <div class="pyramid-visual">
+      <div class="pyr-level l4"><span>1/8 scale</span><strong>coarse search</strong></div>
+      <div class="pyr-level l3"><span>1/4 scale</span><strong>2× shift + refine</strong></div>
+      <div class="pyr-level l2"><span>1/2 scale</span><strong>2× shift + refine</strong></div>
+      <div class="pyr-level l1"><span>full scale</span><strong>2× shift + refine</strong></div>
+    </div>
+
+    <div class="explanation-card dark-card">
+      <div class="explanation-label">Why this is faster</div>
+      <p>A displacement that may be 100 pixels at full resolution becomes only about 12–13 pixels at 1/8 resolution. The coarse level finds the neighborhood of the correct solution cheaply, and the higher-resolution levels only need small local searches.</p>
+    </div>
+  </div>
+</section>
+
+<section class="project-section" id="results">
+  <div class="shell">
+    <div class="section-heading"><div><p class="section-kicker">Provided data</p><h2>Multi-Scale Results</h2></div><span class="section-number">03</span></div>
+    <p class="section-copy">The high-resolution outputs below use pyramid NCC. The three low-resolution JPEGs above are already small enough to terminate at the base level of the pyramid and use the same NCC search directly.</p>
+
+    <div class="result-grid">
+      <figure class="result-card"><img src="images/church_pyramid_ncc.jpg" alt="Church"><figcaption><strong>Church</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card failure-card"><img src="images/emir_pyramid_ncc.jpg" alt="Emir"><figcaption><strong>Emir</strong><span class="offset">G: — · R: — · failure case</span></figcaption></figure>
+      <figure class="result-card"><img src="images/harvesters_pyramid_ncc.jpg" alt="Harvesters"><figcaption><strong>Harvesters</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/icon_pyramid_ncc.jpg" alt="Icon"><figcaption><strong>Icon</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/ilemselga_pyramid_ncc.jpg" alt="Ilemselga"><figcaption><strong>Ilemselga</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/melons_pyramid_ncc.jpg" alt="Melons"><figcaption><strong>Melons</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/religious_painting_pyramid_ncc.jpg" alt="Religious painting"><figcaption><strong>Religious Painting</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/self_portrait_pyramid_ncc.jpg" alt="Self portrait"><figcaption><strong>Self Portrait</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/siren_pyramid_ncc.jpg" alt="Siren"><figcaption><strong>Siren</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/three_generations_pyramid_ncc.jpg" alt="Three generations"><figcaption><strong>Three Generations</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/wharf_pyramid_ncc.jpg" alt="Wharf"><figcaption><strong>Wharf</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="project-section failure-section" id="failure">
+  <div class="shell">
+    <div class="section-heading"><div><p class="section-kicker">Failure analysis</p><h2>Emir of Bukhara</h2></div><span class="section-number">04</span></div>
+    <div class="failure-layout">
+      <figure class="failure-image"><img src="images/emir_pyramid_ncc.jpg" alt="Misaligned Emir result"><figcaption>Raw-pixel NCC result</figcaption></figure>
+      <div class="failure-copy">
+        <h3>Why the baseline fails here</h3>
+        <p>The Emir image is my one retained failure case. The three filtered exposures have substantially different intensity distributions, especially across the subject's clothing. Raw-pixel NCC assumes that corresponding image structure produces correlated intensity patterns, and that assumption is weaker here than in the other provided images.</p>
+        <p>An edge- or gradient-based feature could reduce sensitivity to these cross-channel intensity differences, but I kept the required raw-pixel NCC baseline and documented the failure rather than adding an image-specific correction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="project-section alt" id="extras">
+  <div class="shell">
+    <div class="section-heading"><div><p class="section-kicker">Additional examples</p><h2>Prokudin-Gorskii Collection</h2></div><span class="section-number">05</span></div>
+    <p class="section-copy">Three additional glass plates from the Prokudin-Gorskii collection will be processed with the same alignment pipeline and fixed parameters.</p>
+    <div class="result-grid extras-grid">
+      <figure class="result-card"><img src="images/extra_1.jpg" alt="Additional Prokudin-Gorskii result 1"><figcaption><strong>Additional image 1</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/extra_2.jpg" alt="Additional Prokudin-Gorskii result 2"><figcaption><strong>Additional image 2</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+      <figure class="result-card"><img src="images/extra_3.jpg" alt="Additional Prokudin-Gorskii result 3"><figcaption><strong>Additional image 3</strong><span class="offset">G: — · R: —</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="code-section">
+  <div class="shell code-callout">
+    <div><p class="section-kicker">Implementation</p><h2>Code</h2><p>The final notebook contains the L2 search, NCC search, pyramid recursion, image generation, and recorded offsets.</p></div>
+    <a class="code-link" href="code/main.ipynb">Open main.ipynb →</a>
+  </div>
+</section>
+</main>
+
+<footer><div class="shell footer-content"><div><strong>CS180 · Project 1</strong><p>Images of the Russian Empire</p></div><div class="footer-links"><a href="../">Project 0</a><a href="#top">Back to top ↑</a></div></div></footer>
+</body>
+</html>
