@@ -27,7 +27,7 @@
   <div class="hero-content shell">
     <p class="eyebrow">UC Berkeley · Fall 2026</p>
     <h1>Fun with Filters<br>and Frequencies!</h1>
-    <p class="lede">Convolution, gradients, sharpening, hybrid images, Gaussian and Laplacian stacks, and multiresolution blending.</p>
+    <p class="lede">In this project I worked through convolution and image derivatives first and then kept building on the same frequency ideas for sharpening hybrid images Gaussian and Laplacian stacks and finally multiresolution blending.</p>
     <div class="hero-meta"><span>Raymond Chbeir</span><span class="dot">•</span><span>CS180: Intro to Computer Vision and Computational Photography</span></div>
     <a class="scroll-btn" href="#overview">View project ↓</a>
   </div>
@@ -38,10 +38,10 @@
 <section class="intro shell" id="overview">
   <p class="section-kicker">Overview</p>
   <div class="intro-grid">
-    <h2>Most of this project is really about separating an image into different kinds of information.</h2>
+    <h2>The main thing I got from this project is that a lot of image processing starts making more sense once you think about what information is sitting at different frequencies.</h2>
     <div>
-      <p>I started with convolution and finite difference filters to pull out image derivatives and edges. From there I used Gaussian filters to control high and low frequencies, which leads naturally into sharpening, hybrid images, and finally multiresolution blending.</p>
-      <p>The part that clicked for me is that the Laplacian stack is basically splitting an image into bands of detail. Once both images are split into those bands, I can blend each band with a smooth mask and add everything back together.</p>
+      <p>I started with convolution and finite difference filters so I could see how derivatives and edges come out of an image and from there I used Gaussian filters to control what high and low frequency information stays in the image which then leads pretty naturally into sharpening hybrid images and multiresolution blending.</p>
+      <p>The part that made the later sections click for me was thinking of the Laplacian stack as a way of separating an image into different bands of detail because once both images are broken into those bands I can blend each level using a smooth mask and then add all of those contributions back together to recover one final image.</p>
     </div>
   </div>
   <div class="pipeline">
@@ -58,18 +58,18 @@
 <section class="project-section" id="part1">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 1.1</p><h2>Convolutions from Scratch</h2></div><span class="section-number">01</span></div>
-    <p class="section-copy">I implemented convolution two ways. The first version uses four nested loops and explicitly computes every multiply-and-add. The second still loops over output pixels, but uses a NumPy slice for the local image patch and computes the dot product in one operation. In both cases I flip the kernel first and zero-pad the image so the output has the same size as the input.</p>
+    <p class="section-copy">For convolution I implemented it in two different ways where the first version uses four loops so every multiply and addition is done explicitly and then the second version still loops over the output pixels but instead of looping through every value in the kernel I take the whole local image patch at once and use NumPy to do that multiplication and sum while both versions still flip the kernel first and zero pad the image so the output stays the same size as the input.</p>
 
     <div class="method-grid">
       <article class="method-card">
         <p class="mini-label">4-loop version</p>
         <h3>Everything explicit</h3>
-        <p>For every output pixel I loop over every kernel row and column. It is useful because the mechanics of convolution are completely visible, but it is slow because almost all of the work happens in Python loops.</p>
+        <p>For every output pixel I go through every row and column of the kernel and calculate the contribution one value at a time which made the actual mechanics of convolution very easy to see even though it is obviously much slower since basically all of the work is happening inside Python loops.</p>
       </article>
       <article class="method-card">
         <p class="mini-label">2-loop version</p>
         <h3>Same idea, less Python</h3>
-        <p>I still move over every image location, but I multiply the whole image patch by the flipped kernel at once. This is much faster, and SciPy's <code>convolve2d</code> is faster again because the implementation is optimized underneath Python.</p>
+        <p>For the second version I still move through every image location but I grab the whole patch under the kernel and multiply that patch by the flipped kernel in one operation which cuts out two Python loops and makes it much faster while SciPy's <code>convolve2d</code> is faster again because that implementation is already optimized below the Python level.</p>
       </article>
     </div>
 
@@ -125,7 +125,7 @@
 <section class="project-section alt" id="edges">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 1.2</p><h2>Finite Difference Edge Detection</h2></div><span class="section-number">02</span></div>
-    <p class="section-copy">I applied the finite difference filters to the cameraman image, then combined the derivatives using the gradient magnitude. Thresholding that magnitude gives a binary edge map. The threshold is a tradeoff: too low and texture/noise appears everywhere, too high and real edges disappear.</p>
+    <p class="section-copy">For the cameraman image I applied the finite difference filters in both directions and then combined those two derivative images using the gradient magnitude so that I could get one value describing how strong the change is at each pixel and after that I thresholded the magnitude to make the binary edge image where the main thing I had to tune was making the threshold high enough to remove a lot of the small noisy responses without pushing it so high that the real edges started disappearing too.</p>
 
     <article class="code-block inline-code">
       <div class="code-title"><span>Gradient magnitude + threshold</span><code>Part 1.2</code></div>
@@ -152,7 +152,7 @@ edges = t2 &gt; threshold</code></pre>
 <section class="project-section dark" id="dog">
   <div class="shell">
     <div class="section-heading light-heading"><div><p class="section-kicker gold">Part 1.3</p><h2>Derivative of Gaussian</h2></div><span class="section-number">03</span></div>
-    <p class="section-copy light-copy">The raw finite difference result reacts to a lot of small intensity changes. Blurring first suppresses those high-frequency changes, so the derivative response becomes cleaner. I also convolved the Gaussian itself with D<sub>x</sub> and D<sub>y</sub> to make derivative-of-Gaussian filters and then applied those directly to the image. Aside from boundary behavior, the result matches blur-then-differentiate because convolution is associative.</p>
+    <p class="section-copy light-copy">The normal finite difference filters respond to basically every small intensity change in the image which means a lot of noise and little texture can show up as edges so I first blur the image with a Gaussian to remove some of those small high frequency changes and then take the derivatives which gives a much cleaner result and after that I also convolve the Gaussian itself with D<sub>x</sub> and D<sub>y</sub> to create derivative of Gaussian filters so I can apply each one directly to the image and get essentially the same result apart from the boundary behavior since convolution is associative.</p>
 
     <article class="code-block inline-code">
       <div class="code-title"><span>Derivative-of-Gaussian filters</span><code>Part 1.3</code></div>
@@ -183,7 +183,7 @@ gradient_dog = np.sqrt(dx_dog**2 + dy_dog**2)</code></pre>
 <section class="project-section" id="part21">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 2.1</p><h2>Image Sharpening</h2></div><span class="section-number">04</span></div>
-    <p class="section-copy">Sharpening comes from taking the high-frequency part of an image and adding it back to the original. I get the high frequencies by subtracting a Gaussian-blurred version from the original. Increasing the scale on that high-frequency component makes the result sharper, but too much starts to look artificial.</p>
+    <p class="section-copy">For sharpening I first blur the image with a Gaussian and subtract that blurred version from the original which leaves the higher frequency detail that was removed by the blur and then I add some scaled amount of that detail back onto the original image so the edges and smaller structures become more noticeable while increasing the scale too much eventually starts making the image look unnatural instead of just sharper.</p>
 
     <div class="formula-card">
       <span>high frequencies = image − blur(image)</span>
@@ -211,7 +211,7 @@ sharpened_single = convolve2d(taj, unsharp_filter, mode = 'same', boundary = 'sy
     </div>
 
     <h3 class="subhead spaced">Blur then recover</h3>
-    <p class="section-copy">For a second test I took an already sharp image, blurred it myself, and then sharpened the blurred image. The recovered image looks sharper than the blurred input, but information removed by the blur is not actually recreated. Sharpening boosts the remaining high-frequency contrast; it does not undo the blur perfectly.</p>
+    <p class="section-copy">For the second test I started with another already sharp image and intentionally blurred it first and then tried sharpening that blurred version again so I could see how much of the original appearance comes back and the result does get noticeably sharper than the blurred input but it still cannot recreate information that was actually removed by the blur since what the sharpening step is really doing is increasing the contrast of the high frequency information that is still left.</p>
     <div class="result-grid four-grid">
       <figure class="result-card"><img src="images/pillars_original.png" alt="Pillars original"><figcaption><strong>Original</strong></figcaption></figure>
       <figure class="result-card"><img src="images/pillars_blurred.png" alt="Pillars blurred"><figcaption><strong>Artificially blurred</strong></figcaption></figure>
@@ -224,7 +224,7 @@ sharpened_single = convolve2d(taj, unsharp_filter, mode = 'same', boundary = 'sy
 <section class="project-section alt" id="hybrids">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 2.2</p><h2>Hybrid Images</h2></div><span class="section-number">05</span></div>
-    <p class="section-copy">A hybrid image combines the low frequencies from one image with the high frequencies from another. Up close, the high-frequency image dominates because the fine details are visible. From farther away those details disappear and the low-frequency image becomes more noticeable. The alignment matters a lot, so I used two matching points to put the important features at similar scale and orientation before filtering.</p>
+    <p class="section-copy">For the hybrid images I take the low frequency information from one image and combine it with the high frequency information from another image so when I look at the result up close the fine high frequency details are much easier to see while from farther away those details become harder to resolve and the smoother low frequency image starts dominating what I notice and because the two images are being combined at the same locations I also had to align them using two matching points so the important features had roughly the same position scale and orientation before I filtered anything.</p>
 
     <article class="code-block inline-code">
       <div class="code-title"><span>Low frequencies + high frequencies</span><code>Part 2.2</code></div>
@@ -243,7 +243,7 @@ hybrid = np.clip(hybrid, 0, 1)</code></pre>
         <span>+</span>
         <figure><img src="images/derek_gray.png" alt="Derek grayscale"><figcaption>Derek input</figcaption></figure>
       </div>
-      <figure class="hybrid-main"><img src="images/derek_nutmeg_hybrid.png" alt="Derek Nutmeg hybrid"><figcaption><strong>Derek + Nutmeg hybrid</strong><span>Low frequencies from Nutmeg, high frequencies from Derek</span></figcaption></figure>
+      <figure class="hybrid-main"><img src="images/derek_nutmeg_hybrid.png" alt="Derek Nutmeg hybrid"><figcaption><strong>Derek + Nutmeg hybrid</strong><span>Low frequencies from Nutmeg and high frequencies from Derek</span></figcaption></figure>
     </div>
 
     <div class="result-grid hybrid-grid">
@@ -258,12 +258,12 @@ hybrid = np.clip(hybrid, 0, 1)</code></pre>
 <section class="project-section dark" id="stacks">
   <div class="shell">
     <div class="section-heading light-heading"><div><p class="section-kicker gold">Part 2.3</p><h2>Gaussian & Laplacian Stacks</h2></div><span class="section-number">06</span></div>
-    <p class="section-copy light-copy">Unlike a pyramid, my stack keeps every level at the same image size. The Gaussian stack repeatedly smooths the image. The Laplacian stack is formed by subtracting consecutive Gaussian levels, so each level stores a band of detail that disappeared between those blur scales. I keep the final Gaussian level as the low-frequency residual, which means summing the Laplacian stack reconstructs the image.</p>
+    <p class="section-copy light-copy">For the stacks I keep every level at the same image size instead of downsampling like a normal pyramid and I make the Gaussian stack by repeatedly smoothing the image while the Laplacian stack comes from subtracting one Gaussian level from the next so each level keeps the band of detail that disappears between those two blur amounts and then I keep the final Gaussian image as the low frequency residual which is why adding all of the Laplacian levels back together reconstructs the original image.</p>
 
     <div class="stack-explain">
-      <div><strong>Gaussian</strong><span>G₀, G₁, G₂, … become progressively smoother.</span></div>
-      <div><strong>Laplacian</strong><span>Lᵢ = Gᵢ − Gᵢ₊₁, with the last Gaussian kept as the residual.</span></div>
-      <div><strong>Reconstruction</strong><span>Add all Laplacian levels back together.</span></div>
+      <div><strong>Gaussian</strong><span>Each level keeps the same size while the image gets progressively smoother.</span></div>
+      <div><strong>Laplacian</strong><span>Each level is the difference between two neighboring Gaussian levels so it keeps one band of detail.</span></div>
+      <div><strong>Reconstruction</strong><span>Adding all of the Laplacian levels together gives the image back because the differences telescope together with the final residual.</span></div>
     </div>
 
     <div class="code-grid two-code inline-code">
@@ -316,7 +316,7 @@ hybrid = np.clip(hybrid, 0, 1)</code></pre>
 <section class="project-section" id="oraple">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Oraple</p><h2>Blending Across Frequencies</h2></div><span class="section-number">07</span></div>
-    <p class="section-copy">For the apple and orange I use a half-image mask and build a Gaussian stack of that mask too. At every level, the mask chooses how much of the apple Laplacian and orange Laplacian to keep. The coarse mask levels have a wide transition, while the fine levels preserve local detail. I add all the blended Laplacian levels at the end to get the final Oraple.</p>
+    <p class="section-copy">For the apple and orange blend I start with a mask that chooses the apple on one side and the orange on the other side and then I build a Gaussian stack of that mask so the transition becomes wider and smoother at the lower frequency levels while staying more local at the higher frequency levels and then at every level I multiply the apple Laplacian by the mask and the orange Laplacian by one minus the mask before adding those two contributions together and finally summing all of the blended levels to get the final Oraple.</p>
 
     <div class="formula-card">
       <span>Bᵢ = Mᵢ · L<sub>apple,i</sub> + (1 − Mᵢ) · L<sub>orange,i</sub></span>
@@ -362,13 +362,13 @@ oraple = np.clip(oraple, 0, 1)</code></pre>
 <section class="project-section alt" id="blending">
   <div class="shell">
     <div class="section-heading"><div><p class="section-kicker">Part 2.4</p><h2>Multiresolution Blending</h2></div><span class="section-number">08</span></div>
-    <p class="section-copy">I used the same stack-based blending process on two custom examples. The first uses a shifted vertical mask. The second uses an irregular oval mask, which was useful because I wanted to keep the planets in the middle instead of splitting the image along a straight line.</p>
+    <p class="section-copy">For the last part I used the same stack based blending idea on two pairs of my own images where the first pair uses a vertical mask that I shifted a little so the split lands in a better part of the scene and the second pair uses an irregular oval mask because I wanted to keep the planets around the center instead of forcing the whole image to be divided by one straight line.</p>
 
     <article class="blend-case">
       <div class="blend-copy">
         <p class="mini-label">Custom blend #1</p>
         <h3>Starship + Apollo 11</h3>
-        <p>I aligned the rockets using the top and bottom of each rocket as the two corresponding points. After alignment, I placed Starship on the left and Apollo 11 on the right. I moved the split slightly left to put the seam in a better part of the scene, then blurred the mask across the stack so the transition happens over multiple spatial scales instead of as a hard cut.</p>
+        <p>For the rocket blend I aligned the two images by clicking the top and bottom of each rocket as the corresponding points so the rockets had roughly the same scale and orientation and then I kept Starship on the left and Apollo 11 on the right while moving the split slightly toward the left because that placed the transition in a better area of the background and after that the Gaussian mask stack spreads the transition across different scales instead of leaving one hard cut between the two images.</p>
       </div>
 
       <article class="code-block inline-code">
@@ -397,7 +397,7 @@ for i in range(levels):
       <div class="blend-copy">
         <p class="mini-label">Custom blend #2 · irregular mask</p>
         <h3>Planet Blend</h3>
-        <p>For this one a straight split did not make sense because the part I wanted to preserve was around the center. I made an oval mask around that region. A hard oval still left a very obvious seam, so I blurred the oval itself before building its Gaussian stack. That gave even the first mask level a gradual transition and made the final composite much smoother.</p>
+        <p>For the planet blend a straight split did not really make sense because the part I wanted to keep was concentrated around the middle of the images so I made an oval mask around that region and when I first tried the hard oval the outline was still very visible which made the whole thing look pasted together so I blurred the oval itself before I built the Gaussian mask stack and that way even the first mask level already has a gradual transition which ended up making the final result much smoother.</p>
       </div>
 
       <article class="code-block inline-code">
@@ -440,7 +440,7 @@ mask910_gaussian = gaussian_stack(soft_mask910, gaussian, levels)</code></pre>
 
     <div class="explanation-card">
       <div class="explanation-label">What I took away from this</div>
-      <p>The mask matters just as much as the image stacks. If the mask has a hard boundary at the finest level, a difficult pair can still look pasted together. For the irregular blend, softening the initial oval before creating the mask stack was what finally removed most of the visible seam.</p>
+      <p>The main thing I noticed from these blends is that the mask can matter just as much as the image stacks because even if the multiresolution blending itself is working a hard boundary in the mask can still show up pretty clearly when the two source images are very different and for the planet example the change that actually made it look much better was softening the oval first and then creating the rest of the mask stack from that already smooth starting point.</p>
     </div>
   </div>
 </section>
@@ -450,7 +450,7 @@ mask910_gaussian = gaussian_stack(soft_mask910, gaussian, levels)</code></pre>
     <div>
       <p class="section-kicker">Project files</p>
       <h2>Built in Python / Jupyter</h2>
-      <p>The code snippets are now placed directly with the part of the project where I used them.</p>
+      <p>I kept the main code snippets next to the sections where I actually used them so the implementation and the results are together instead of having all of the code separated at the end of the page.</p>
     </div>
     <a class="code-link" href="https://github.com/raymondchbeir/cs180/tree/main/proj2">View project files ↗</a>
   </div>
