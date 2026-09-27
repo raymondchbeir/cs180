@@ -1,0 +1,64 @@
+# Project 2 images
+
+Upload the generated files from `proj2_results` into this folder without renaming them.
+
+The writeup currently references these files:
+
+- `original.png`
+- `box_filter.png`
+- `dx.png`
+- `dy.png`
+- `dx+dy.png`
+- `cameraman_original.png`
+- `cameraman_dx.png`
+- `cameraman_dy.png`
+- `cameraman_gradient.png`
+- `cameraman_edges.png`
+- `gaussian_kernel.png`
+- `gaussian_blur.png`
+- `gaussian_gradient.png`
+- `gaussian_edges.png`
+- `dog_x_filter.png`
+- `dog_y_filter.png`
+- `dog_gradient.png`
+- `dog_edges.png`
+- `taj_original.png`
+- `taj_blurred.png`
+- `taj_high_frequency.png`
+- `taj_sharpened.png`
+- `pillars_original.png`
+- `pillars_blurred.png`
+- `pillars_recovered.png`
+- `pillars_sharpened.png`
+- `nutmeg_gray.png`
+- `derek_gray.png`
+- `nutmeg_low.png`
+- `derek_high.png`
+- `derek_nutmeg_hybrid.png`
+- `hybrid34.png`
+- `hybrid56.png`
+- `apple_original.png`
+- `orange_original.png`
+- `apple_gaussian_0.png`
+- `apple_gaussian_2.png`
+- `apple_gaussian_4.png`
+- `apple_gaussian_9.png`
+- `apple_laplacian_0.png`
+- `apple_laplacian_2.png`
+- `apple_laplacian_4.png`
+- `apple_laplacian_9.png`
+- `oraple_mask.png`
+- `oraple.png`
+- `oraple_blended_level_0.png`
+- `oraple_blended_level_2.png`
+- `oraple_blended_level_4.png`
+- `oraple_blended_level_9.png`
+- `image7_aligned.png`
+- `image8_aligned.png`
+- `mask78.png`
+- `blend78.png`
+- `image9_aligned.png`
+- `image10_aligned.png`
+- `mask910_hard.png`
+- `mask910_soft.png`
+- `blend910.png`
